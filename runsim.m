@@ -1,16 +1,13 @@
-close all;
 clear;
+close all;
 
-% Initial State
-x_i = [0,0,0];
+addpath('utils');
+addpath('trajectories');
 
-% Final State
-x_f = [2,0,0];
+controlhandle = @controller;
 
+% Choose which trajectory you want to test with
+%trajhandle = @traj_diamond;
+trajhandle = @traj_sine;
 
-time_int = 0:0.1:5;
-
-% Solving system of equations
-[t,x] = ode45(@(t,x)physics(x,system_param,controller(x,system_param,x_f)),time_int,x_i);
-
-display_drone(x,system_param,time_int);
+[t, state] = simulation_2d(controlhandle, trajhandle);
