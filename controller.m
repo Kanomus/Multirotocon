@@ -13,13 +13,54 @@ function [ u1, u2 ] = controller(~, state, des_state, params)
 
 %   Using these current and desired states, you have to compute the desired
 %   controls
+%   u1 = F, u2 = M
 
-u1 = 0;
-u2 = 0;
+k.p = 1;
+k.i = 1;
+k.d = 1;
+k.rp = 1;
+k.ri = 0;
+k.rd = 0.4;
 
+vector = des_state.pos - state.pos;
 
+if vector(1) ~= 0
+    req_theta = atan(vector(2) / vector(1));
+else
+    % Handle the case where vector(1) is zero
+    req_theta = state.rot + (pi/2);
+end
+% req_theta = atan(vector(2)/vector(1));
+theta = state.rot + (pi/2);
+theta_error = req_theta - theta;
 
-% FILL IN YOUR CODE HERE
+if(theta_error == 0)
+    u1 = k.p * sqrt((vector(1))^2 + (vector(2))^2);
+    u2 = 0;
+else
+    u2 = k.rp * theta_error;
+    multiplied = vector .* state.vel;
+    u1 = k.p * norm(multiplied,2);
+end
+
+persistent int_pos_error;
+persistent int_theta_error;
+
+if(isempty(int_pos_error))
+    int_pos_error = 0;
+end
+if(isempty(int_theta_error))
+    int_theta_error = 0;
+end
+
+int_pos_error = int_pos_error + vector;
+int_theta_error = int_theta_error + theta_error;
+
+u1 = u1 + (k.i * norm(int_pos_error));
+u2 = u2 + (k.ri * int_theta_error);
+
+u1 = u1 + (k.d * sqrt((state.vel(1))^2 + (state.vel(2))^2));
+u2 = u2 + (k.rd * state.omega);
 
 end
 
