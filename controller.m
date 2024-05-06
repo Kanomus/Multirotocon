@@ -15,52 +15,71 @@ function [ u1, u2 ] = controller(~, state, des_state, params)
 %   controls
 %   u1 = F, u2 = M
 
-k.p = 1;
-k.i = 1;
-k.d = 1;
-k.rp = 1;
-k.ri = 0;
-k.rd = 0.4;
+dt = 5/100;
 
-vector = des_state.pos - state.pos;
+k.p = 20.18;
+k.i = 0.18;
+k.d = 1000;
+k.rp = 20;
+k.rd = 1;
 
-if vector(1) ~= 0
-    req_theta = atan(vector(2) / vector(1));
+pos_error = des_state.pos - state.pos;
+y_error = pos_error(1);
+z_error = pos_error(2);
+
+persistent int_y_error;
+persistent int_z_error;
+persistent prev_z_error;
+persistent prev_y_error;
+
+if(isempty(int_y_error))
+    int_y_error = 0;
+end
+if(isempty(int_z_error))
+    int_z_error = 0;
+end
+if(isempty(prev_y_error))
+    prev_y_error = y_error;
+end
+if(isempty(prev_z_error))
+    prev_z_error = z_error;
+end
+
+
+%---------------working in the z direction--------------
+
+Pz = k.p * z_error;
+
+int_z_error = int_z_error + (z_error*dt);
+diff_z_error = (z_error - prev_z_error)/dt;
+
+Iz = k.i * int_z_error;
+Dz = k.d * diff_z_error;
+
+%----------------working in the y direction---------------
+
+phi_max = pi/6;
+
+des_theta = -des_state.acc(1) - y_error;
+
+if(des_theta>0)
+    des_theta = min(phi_max, des_theta);
 else
-    % Handle the case where vector(1) is zero
-    req_theta = state.rot + (pi/2);
-end
-% req_theta = atan(vector(2)/vector(1));
-theta = state.rot + (pi/2);
-theta_error = req_theta - theta;
-
-if(theta_error == 0)
-    u1 = k.p * sqrt((vector(1))^2 + (vector(2))^2);
-    u2 = 0;
-else
-    u2 = k.rp * theta_error;
-    multiplied = vector .* state.vel;
-    u1 = k.p * norm(multiplied,2);
+    des_theta = max(-phi_max, des_theta);
 end
 
-persistent int_pos_error;
-persistent int_theta_error;
+theta_error = des_theta - state.rot;
+Pr = k.rp * theta_error;
 
-if(isempty(int_pos_error))
-    int_pos_error = 0;
-end
-if(isempty(int_theta_error))
-    int_theta_error = 0;
-end
+Dr = - (k.rd * state.omega);
 
-int_pos_error = int_pos_error + vector;
-int_theta_error = int_theta_error + theta_error;
+%------------------final calculations--------------
 
-u1 = u1 + (k.i * norm(int_pos_error));
-u2 = u2 + (k.ri * int_theta_error);
+u1 = Pz + Iz + Dz;
+u2 = Pr + Dr;
 
-u1 = u1 + (k.d * sqrt((state.vel(1))^2 + (state.vel(2))^2));
-u2 = u2 + (k.rd * state.omega);
+prev_z_error = z_error;
+prev_y_error = y_error;
 
 end
 
