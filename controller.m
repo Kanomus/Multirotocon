@@ -15,13 +15,14 @@ function [ u1, u2 ] = controller(~, state, des_state, params)
 %   controls
 %   u1 = F, u2 = M
 
-dt = 5/100;
+dt = 1/100;
 
-k.p = 20.18;
+k.p = 30;
 k.i = 0.18;
-k.d = 1000;
-k.rp = 20;
-k.rd = 1;
+k.d = 1800;
+k.rp = 70;
+k.ri = 0.001;
+k.rd = 0.5;
 
 pos_error = des_state.pos - state.pos;
 y_error = pos_error(1);
@@ -59,9 +60,12 @@ Dz = k.d * diff_z_error;
 %----------------working in the y direction---------------
 
 phi_max = pi/6;
+%mapping y_error [0,inf]) to [0, pi/2)
+%des_theta = - atan(2 * y_error);
+%changing limit from pi/2 to pi/6
+%des_theta = (1/3) * des_theta;
 
-des_theta = -des_state.acc(1) - y_error;
-
+des_theta = - y_error;
 if(des_theta>0)
     des_theta = min(phi_max, des_theta);
 else
@@ -73,10 +77,13 @@ Pr = k.rp * theta_error;
 
 Dr = - (k.rd * state.omega);
 
+int_y_error = int_y_error + (y_error * dt);
+Ir =  - (k.ri * int_y_error);
+
 %------------------final calculations--------------
 
 u1 = Pz + Iz + Dz;
-u2 = Pr + Dr;
+u2 = Pr + Ir + Dr;
 
 prev_z_error = z_error;
 prev_y_error = y_error;
