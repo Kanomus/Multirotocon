@@ -1,0 +1,17 @@
+The controller here adjusts the forces on the drone according to the z and y error seperately.
+
+Z direction:
+
+In the z direction, a separate PID controller works, which controls u1, which is the perpendicular force on the drone.
+Pz, Iz and Dz are the PID terms which work with the coefficients k.p, k.i and k.d
+
+Y direction:
+
+In the Y direction, a separate PID controller works, which only affects u2, which is the moment on the drone.
+I am finding a desired theta according to whether I want the drone to move forwards or backwards, which is determined by the position error in the y direction. This is possible because this desired theta is capped between -pi/6 and pi/6. This means that the drone doesn't tilt much in any direction, which causes very little difference in the Z component of the applied force u1, which is easily autocorrected by the z PID controller.
+The Pr term makes the drone rotate towards that desired theta, while the Dr term slows down the approach so the drone doesn't rotate very rapidly, and Ir term takes care of any persistent rotational errors which can be helpful in cases where there are winds, but that term doesn't help in this ideal scenario.
+
+In-built functions used:
+
+min - finds the lower of two numbers
+max - finds the higher of two numbers

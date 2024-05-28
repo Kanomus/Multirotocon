@@ -22,7 +22,7 @@ k.i = 0.18;
 k.d = 1800;
 k.rp = 70;
 k.ri = 0.001;
-k.rd = 0.5;
+k.rd = 0.2;
 
 pos_error = des_state.pos - state.pos;
 y_error = pos_error(1);
@@ -31,7 +31,7 @@ z_error = pos_error(2);
 persistent int_y_error;
 persistent int_z_error;
 persistent prev_z_error;
-persistent prev_y_error;
+% persistent prev_y_error;
 
 if(isempty(int_y_error))
     int_y_error = 0;
@@ -39,9 +39,9 @@ end
 if(isempty(int_z_error))
     int_z_error = 0;
 end
-if(isempty(prev_y_error))
-    prev_y_error = y_error;
-end
+% if(isempty(prev_y_error))
+%     prev_y_error = y_error;
+% end
 if(isempty(prev_z_error))
     prev_z_error = z_error;
 end
@@ -60,12 +60,9 @@ Dz = k.d * diff_z_error;
 %----------------working in the y direction---------------
 
 phi_max = pi/6;
-%mapping y_error [0,inf]) to [0, pi/2)
-%des_theta = - atan(2 * y_error);
-%changing limit from pi/2 to pi/6
-%des_theta = (1/3) * des_theta;
 
 des_theta = - y_error;
+%capping des_theta to [-pi/6, pi/6]
 if(des_theta>0)
     des_theta = min(phi_max, des_theta);
 else
